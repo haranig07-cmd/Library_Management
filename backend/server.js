@@ -21,11 +21,7 @@ app.use(express.json());
 
 // Enable CORS
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'https://innovatex-edulib-smart-library.vercel.app',
-    'https://innovatex-edulib-smart-library-git-main-haranig07-cmds-projects.vercel.app'
-  ],
+  origin: (origin, callback) => callback(null, true),
   credentials: true
 }));
 
