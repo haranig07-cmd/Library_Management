@@ -1,60 +1,55 @@
 const User = require('../models/User');
 const Book = require('../models/Book');
 const Transaction = require('../models/Transaction');
-const Recommendation = require('../models/Recommendation');
 
-// @desc    Export entire database as JSON
-// @route   GET /api/system/backup
-// @access  Private (Admin)
-exports.exportDatabase = async (req, res) => {
+// @desc    Get system statistics
+exports.getSystemStats = async (req, res) => {
   try {
-    const [users, books, transactions, recommendations] = await Promise.all([
-      User.find({}),
-      Book.find({}),
-      Transaction.find({}),
-      Recommendation.find({})
+    const totalUsers = await User.countDocuments();
+    const totalBooks = await Book.countDocuments();
+    const totalTransactions = await Transaction.countDocuments();
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const issuedToday = await Transaction.countDocuments({ 
+      issueDate: { $gte: today },
+      status: 'Issued'
+    });
+
+    const pendingReturns = await Transaction.countDocuments({ 
+      status: 'Issued',
+      dueDate: { $lt: new Date() }
+    });
+
+    const fineStats = await Transaction.aggregate([
+      { $group: { _id: null, total: { $sum: "$fineAmount" } } }
     ]);
 
-    const backup = {
-      timestamp: new Date(),
-      users,
-      books,
-      transactions,
-      recommendations
-    };
-
-    res.status(200).json({ success: true, data: backup });
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalBooks,
+        totalTransactions,
+        issuedToday,
+        pendingReturns,
+        totalFines: fineStats[0]?.total || 0,
+        serverUptime: process.uptime(),
+        memoryUsage: process.memoryUsage().heapUsed
+      }
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Backup failed' });
+    res.status(500).json({ success: false, error: 'Server Error' });
   }
 };
 
-// @desc    Restore database from JSON
-// @route   POST /api/system/restore
-// @access  Private (Admin)
-exports.restoreDatabase = async (req, res) => {
-  try {
-    const { users, books, transactions, recommendations } = req.body;
-    
-    if (users) {
-      await User.deleteMany({});
-      await User.insertMany(users);
-    }
-    if (books) {
-      await Book.deleteMany({});
-      await Book.insertMany(books);
-    }
-    if (transactions) {
-      await Transaction.deleteMany({});
-      await Transaction.insertMany(transactions);
-    }
-    if (recommendations) {
-      await Recommendation.deleteMany({});
-      await Recommendation.insertMany(recommendations);
-    }
-
-    res.status(200).json({ success: true, message: 'Database restored successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: 'Restore failed: ' + error.message });
-  }
+// @desc    Get system logs (Mock)
+exports.getSystemLogs = async (req, res) => {
+  const logs = [
+    { timestamp: new Date(), level: 'INFO', message: 'System startup successful' },
+    { timestamp: new Date(), level: 'INFO', message: 'Database connection established' },
+    { timestamp: new Date(), level: 'WARN', message: 'High memory usage detected' },
+  ];
+  res.status(200).json({ success: true, data: logs });
 };

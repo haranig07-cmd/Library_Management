@@ -2,6 +2,8 @@ const Transaction = require('../models/Transaction');
 const Book = require('../models/Book');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Reservation = require('../models/Reservation');
+const Recommendation = require('../models/Recommendation');
 
 // Helper to calculate fines (e.g., $1 per day late)
 const calculateFine = (dueDate, returnDate) => {
@@ -17,8 +19,6 @@ const calculateFine = (dueDate, returnDate) => {
 };
 
 // @desc    Issue a book
-// @route   POST /api/transactions/issue
-// @access  Private (Librarian/Admin)
 exports.issueBook = async (req, res) => {
   try {
     const { userId, bookId, dueDate } = req.body;
@@ -30,10 +30,17 @@ exports.issueBook = async (req, res) => {
       return res.status(400).json({ success: false, error: 'No copies available' });
     }
 
+    const targetUser = await User.findById(userId);
+    if (!targetUser) return res.status(404).json({ success: false, error: 'User not found' });
+
+    // Role-based due date (Faculty gets 30 days, others 14)
+    const defaultDays = targetUser.role === 'Faculty' ? 30 : 14;
+    const finalDueDate = dueDate || new Date(Date.now() + defaultDays * 24 * 60 * 60 * 1000);
+
     const transaction = await Transaction.create({
       user: userId,
       book: bookId,
-      dueDate: dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      dueDate: finalDueDate
     });
 
     book.availableCopies -= 1;
@@ -52,8 +59,6 @@ exports.issueBook = async (req, res) => {
 };
 
 // @desc    Return a book
-// @route   PUT /api/transactions/return/:id
-// @access  Private (Librarian/Admin)
 exports.returnBook = async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id).populate('book');
@@ -75,6 +80,16 @@ exports.returnBook = async (req, res) => {
     book.availableCopies += 1;
     await book.save();
 
+    // Check for reservations
+    const reservation = await Reservation.findOne({ book: book._id, status: 'Pending' }).sort({ createdAt: 1 });
+    if (reservation) {
+      await Notification.create({
+        user: reservation.user,
+        message: `The reserved book "${book.title}" is now available!`,
+        type: 'System'
+      });
+    }
+
     if (fine > 0) {
       await Notification.create({
         user: transaction.user,
@@ -89,20 +104,21 @@ exports.returnBook = async (req, res) => {
   }
 };
 
-// @desc    Request a book
-// @route   POST /api/transactions/request
-// @access  Private (Student/Faculty)
+// @desc    Request a book (Student/Faculty)
 exports.requestBook = async (req, res) => {
   try {
     const { bookId } = req.body;
     const book = await Book.findById(bookId);
     if (!book) return res.status(404).json({ success: false, error: 'Book not found' });
     
+    // Role-based due date
+    const days = req.user.role === 'Faculty' ? 30 : 14;
+
     const transaction = await Transaction.create({
       user: req.user.id,
       book: bookId,
       status: 'Pending Approval',
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      dueDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000)
     });
 
     res.status(201).json({ success: true, data: transaction });
@@ -111,9 +127,34 @@ exports.requestBook = async (req, res) => {
   }
 };
 
+// @desc    Reserve a book (Faculty)
+exports.reserveBook = async (req, res) => {
+  try {
+    const { bookId } = req.body;
+    const reservation = await Reservation.create({
+      user: req.user.id,
+      book: bookId
+    });
+    res.status(201).json({ success: true, data: reservation });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Recommend a book (Faculty)
+exports.recommendBook = async (req, res) => {
+  try {
+    const recommendation = await Recommendation.create({
+      faculty: req.user.id,
+      ...req.body
+    });
+    res.status(201).json({ success: true, data: recommendation });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
 // @desc    Approve/Reject book request
-// @route   PUT /api/transactions/request/:id
-// @access  Private (Librarian/Admin)
 exports.updateRequestStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -121,7 +162,7 @@ exports.updateRequestStatus = async (req, res) => {
     if (!transaction) return res.status(404).json({ success: false, error: 'Request not found' });
     
     if (status === 'Issued') {
-      const book = await Book.findById(transaction.book);
+      const book = await Book.findById(transaction.book._id);
       if (book.availableCopies <= 0) {
         return res.status(400).json({ success: false, error: 'No copies available' });
       }
@@ -137,11 +178,6 @@ exports.updateRequestStatus = async (req, res) => {
       });
     } else {
       transaction.status = status;
-      await Notification.create({
-        user: transaction.user,
-        message: `Your request for "${transaction.book?.title || 'a book'}" was ${status.toLowerCase()}.`,
-        type: 'System'
-      });
     }
 
     await transaction.save();

@@ -17,8 +17,16 @@ const bookSchema = new mongoose.Schema({
   },
   isbn: {
     type: String,
-    required: [true, 'Please provide ISBN'],
+    required: [true, 'Please add an ISBN'],
     unique: true
+  },
+  shelfLocation: String,
+  category: String,
+  coverImage: String,
+  status: {
+    type: String,
+    enum: ['Good', 'Damaged', 'Lost'],
+    default: 'Good'
   },
   edition: {
     type: String

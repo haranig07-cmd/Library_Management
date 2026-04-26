@@ -1,5 +1,5 @@
 const express = require('express');
-const { exportDatabase, restoreDatabase } = require('../controllers/systemController');
+const { getSystemStats, getSystemLogs } = require('../controllers/systemController');
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(protect);
 router.use(authorizeRoles('Admin'));
 
-router.get('/backup', exportDatabase);
-router.post('/restore', restoreDatabase);
+router.get('/stats', getSystemStats);
+router.get('/logs', getSystemLogs);
 
 module.exports = router;

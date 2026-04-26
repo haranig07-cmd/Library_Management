@@ -26,8 +26,16 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['Admin', 'Librarian', 'Student', 'Faculty'],
-    required: [true, 'Please specify a role']
+    default: 'Student'
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  activityLogs: [{
+    action: String,
+    timestamp: { type: Date, default: Date.now }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

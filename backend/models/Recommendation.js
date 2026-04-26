@@ -8,25 +8,14 @@ const recommendationSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    required: [true, 'Please add a book title'],
-    trim: true
+    required: true
   },
-  author: {
-    type: String,
-    required: [true, 'Please add an author'],
-    trim: true
-  },
-  subject: {
-    type: String,
-    required: [true, 'Please specify a subject']
-  },
-  reason: {
-    type: String,
-    required: [true, 'Please provide a reason for recommendation']
-  },
+  author: String,
+  subject: String,
+  reason: String,
   status: {
     type: String,
-    enum: ['Pending', 'Reviewed', 'Accepted', 'Rejected'],
+    enum: ['Pending', 'Reviewed', 'Acquired'],
     default: 'Pending'
   },
   createdAt: {

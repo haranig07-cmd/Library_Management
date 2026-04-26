@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookPlus, History, MessageSquare, Search, BookOpen, Layers } from 'lucide-react';
+import { BookPlus, History, MessageSquare, Search, BookOpen, Layers, Clock } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import BookCard from '../components/BookCard';
 import DataTable from '../components/DataTable';
@@ -9,7 +9,6 @@ import { API_BASE_URL } from '../api';
 const FacultyDashboard = () => {
   const [books, setBooks] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isRecommendModalOpen, setIsRecommendModalOpen] = useState(false);
@@ -47,9 +46,12 @@ const FacultyDashboard = () => {
     fetchData(search);
   };
 
-  const handleReserve = async (book) => {
+  const handleAction = async (book) => {
+    const isAvailable = book.availableCopies > 0;
+    const endpoint = isAvailable ? '/transactions/request' : '/transactions/reserve';
+    
     try {
-      const res = await fetch(`${API_BASE_URL}/transactions/request`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -58,7 +60,7 @@ const FacultyDashboard = () => {
         body: JSON.stringify({ bookId: book._id })
       });
       if (res.ok) {
-        alert("Reservation request sent!");
+        alert(isAvailable ? "📚 Issue request sent! (30-day loan period)" : "📝 Book is issued, but you're now on the Waitlist!");
         fetchData();
       }
     } catch (err) {
@@ -69,7 +71,7 @@ const FacultyDashboard = () => {
   const handleRecommend = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_BASE_URL}/recommendations`, {
+      const res = await fetch(`${API_BASE_URL}/transactions/recommend`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -80,7 +82,7 @@ const FacultyDashboard = () => {
       if (res.ok) {
         setIsRecommendModalOpen(false);
         setRecForm({ title: '', author: '', subject: '', reason: '' });
-        alert("Recommendation sent to library!");
+        alert("✅ Recommendation sent to the Librarian!");
       }
     } catch (err) {
       console.error(err);
@@ -89,19 +91,26 @@ const FacultyDashboard = () => {
 
   const columns = [
     { 
-      header: 'Resource', 
+      header: 'Research Resource', 
       cell: (row) => (
-        <div style={{ fontWeight: '500' }}>{row.book?.title || 'Unknown'}</div>
+        <div>
+          <div style={{ fontWeight: '600' }}>{row.book?.title || 'Unknown'}</div>
+          <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>ISBN: {row.book?.isbn}</div>
+        </div>
       )
     },
-    { header: 'Due Date', cell: (row) => new Date(row.dueDate).toLocaleDateString() },
+    { 
+      header: 'Return By', 
+      cell: (row) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Clock size={14} />
+          {new Date(row.dueDate).toLocaleDateString()}
+        </div>
+      )
+    },
     { 
       header: 'Status', 
-      cell: (row) => (
-        <span className={`badge badge-${row.status.toLowerCase()}`}>
-          {row.status}
-        </span>
-      ) 
+      cell: (row) => <span className={`badge badge-${row.status.toLowerCase().replace(' ', '-')}`}>{row.status}</span> 
     },
   ];
 
@@ -111,22 +120,22 @@ const FacultyDashboard = () => {
         <div className="stat-card">
           <div className="stat-icon-wrapper primary"><BookOpen size={20} /></div>
           <div className="stat-card-info">
-            <span className="stat-card-title">Active Resources</span>
+            <span className="stat-card-title">Research Assets</span>
             <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon-wrapper secondary"><Layers size={20} /></div>
+          <div className="stat-icon-wrapper secondary"><Clock size={20} /></div>
           <div className="stat-card-info">
-            <span className="stat-card-title">Pending Approvals</span>
-            <span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span>
+            <span className="stat-card-title">Loan Privilege</span>
+            <span className="stat-card-value">30 Days</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon-wrapper success"><MessageSquare size={20} /></div>
           <div className="stat-card-info">
-            <span className="stat-card-title">Recommendations</span>
-            <span className="stat-card-value">{recommendations.length}</span>
+            <span className="stat-card-title">Notifications</span>
+            <span className="stat-card-value">0</span>
           </div>
         </div>
       </div>
@@ -144,7 +153,7 @@ const FacultyDashboard = () => {
               <button type="submit" className="btn btn-primary btn-sm">Search</button>
             </form>
             <button className="btn btn-secondary" onClick={() => setIsRecommendModalOpen(true)}>
-              <BookPlus size={18} /> Suggest Purchase
+              <BookPlus size={18} /> Suggest Resource
             </button>
           </div>
         </div>
@@ -153,8 +162,8 @@ const FacultyDashboard = () => {
             <BookCard 
               key={book._id} 
               book={book} 
-              onAction={() => handleReserve(book)}
-              actionLabel="Reserve for Research"
+              onAction={() => handleAction(book)}
+              actionLabel={book.availableCopies > 0 ? "Request (30 Days)" : "Join Waitlist"}
             />
           ))}
         </div>
@@ -163,20 +172,20 @@ const FacultyDashboard = () => {
       <div className="dashboard-section" style={{ marginTop: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <History size={20} className="text-secondary" />
-          <h3 style={{ margin: 0 }}>Active Loans & History</h3>
+          <h3 style={{ margin: 0 }}>Borrowing History</h3>
         </div>
-        <DataTable columns={columns} data={transactions.filter(t => t.status === 'Issued')} loading={loading} />
+        <DataTable columns={columns} data={transactions} loading={loading} />
       </div>
 
-      <Modal isOpen={isRecommendModalOpen} onClose={() => setIsRecommendModalOpen(false)} title="Recommend a New Resource">
+      <Modal isOpen={isRecommendModalOpen} onClose={() => setIsRecommendModalOpen(false)} title="Departmental Suggestion">
         <form className="modal-form" onSubmit={handleRecommend}>
-          <div className="modal-form-group"><label>Book Title</label><input type="text" value={recForm.title} onChange={e => setRecForm({...recForm, title: e.target.value})} required /></div>
-          <div className="modal-form-group"><label>Author</label><input type="text" value={recForm.author} onChange={e => setRecForm({...recForm, author: e.target.value})} required /></div>
-          <div className="modal-form-group"><label>Subject Area</label><input type="text" value={recForm.subject} onChange={e => setRecForm({...recForm, subject: e.target.value})} required /></div>
-          <div className="modal-form-group"><label>Justification</label><textarea value={recForm.reason} onChange={e => setRecForm({...recForm, reason: e.target.value})} required placeholder="Why is this resource needed for your department?" /></div>
+          <div className="modal-form-group"><label>Resource Title</label><input type="text" value={recForm.title} onChange={e => setRecForm({...recForm, title: e.target.value})} required /></div>
+          <div className="modal-form-group"><label>Author/Editor</label><input type="text" value={recForm.author} onChange={e => setRecForm({...recForm, author: e.target.value})} required /></div>
+          <div className="modal-form-group"><label>Department/Subject</label><input type="text" value={recForm.subject} onChange={e => setRecForm({...recForm, subject: e.target.value})} required /></div>
+          <div className="modal-form-group"><label>Reason for Recommendation</label><textarea value={recForm.reason} onChange={e => setRecForm({...recForm, reason: e.target.value})} required /></div>
           <div className="modal-actions">
             <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setIsRecommendModalOpen(false)}>Cancel</button>
-            <button type="submit" className="modal-btn modal-btn-submit">Submit Request</button>
+            <button type="submit" className="modal-btn modal-btn-submit">Submit Recommendation</button>
           </div>
         </form>
       </Modal>

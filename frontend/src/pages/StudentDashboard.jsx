@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Search, Clock, History, Calendar, CheckCircle } from 'lucide-react';
+import { BookOpen, Search, Clock, History, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import BookCard from '../components/BookCard';
 import DataTable from '../components/DataTable';
@@ -69,7 +69,23 @@ const StudentDashboard = () => {
     { header: 'Book Title', cell: (row) => row.book?.title || 'Unknown' },
     { header: 'Author', cell: (row) => row.book?.author || 'Unknown' },
     { header: 'Issue Date', cell: (row) => new Date(row.issueDate).toLocaleDateString() },
-    { header: 'Due Date', cell: (row) => new Date(row.dueDate).toLocaleDateString() },
+    { 
+      header: 'Due Date', 
+      cell: (row) => {
+        const dueDate = new Date(row.dueDate);
+        const today = new Date();
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        const isNear = diffDays <= 3 && diffDays >= 0 && row.status === 'Issued';
+        
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isNear ? '#f59e0b' : '' }}>
+            {isNear && <AlertCircle size={14} />}
+            {dueDate.toLocaleDateString()}
+            {isNear && <span style={{ fontSize: '0.7rem' }}> (Due Soon!)</span>}
+          </div>
+        );
+      }
+    },
     { 
       header: 'Status', 
       cell: (row) => (
