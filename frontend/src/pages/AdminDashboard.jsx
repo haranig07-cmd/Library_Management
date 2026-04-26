@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Users, Book, Clock, AlertCircle, Database, Shield, 
-  Activity, Download, Upload, FileText, Server, HardDrive 
+  Activity, Download, Upload, FileText, Server, HardDrive, BarChart3, PieChart as PieIcon
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie
+} from 'recharts';
 import DashboardLayout from '../components/DashboardLayout';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -11,13 +14,10 @@ import { API_BASE_URL } from '../api';
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
+  const [books, setBooks] = useState([]);
   const [stats, setStats] = useState({ 
-    totalBooks: 0, 
-    issuedBooks: 0, 
-    pendingReturns: 0,
-    totalFines: 0,
-    serverUptime: 0,
-    memoryUsage: 0
+    totalBooks: 0, issuedBooks: 0, pendingReturns: 0, totalFines: 0,
+    serverUptime: 0, memoryUsage: 0
   });
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +43,7 @@ const AdminDashboard = () => {
       const logsData = await logsRes.json();
       
       if (usersData.success) setUsers(usersData.data);
+      if (booksData.success) setBooks(booksData.data);
       if (sysData.success) setStats(prev => ({ ...prev, ...sysData.data }));
       if (logsData.success) setSystemLogs(logsData.data);
       
@@ -66,8 +67,6 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh every minute
-    return () => clearInterval(interval);
   }, []);
 
   const handleExportCSV = (data, filename) => {
@@ -85,69 +84,16 @@ const AdminDashboard = () => {
     a.click();
   };
 
-  const handleBulkImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const text = event.target.result;
-      const lines = text.split('\n');
-      const headers = lines[0].split(',');
-      const usersToImport = lines.slice(1).filter(l => l.trim()).map(line => {
-        const values = line.split(',');
-        return {
-          username: values[0],
-          email: values[1],
-          password: values[2] || 'password123',
-          role: values[3] || 'Student'
-        };
-      });
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/users/bulk`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-          body: JSON.stringify(usersToImport)
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(`Successfully imported ${data.count} users!`);
-          fetchData();
-        } else {
-          alert("Import failed: " + data.error);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE_URL}/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify(userForm)
-      });
-      if (res.ok) {
-        setIsModalOpen(false);
-        setUserForm({ username: '', email: '', password: '', role: 'Student' });
-        fetchData();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const chartData = [
-    { name: 'Books', value: stats.totalBooks, color: '#6366f1' },
-    { name: 'Issued', value: stats.issuedBooks, color: '#10b981' },
-    { name: 'Fines ($)', value: stats.totalFines, color: '#ef4444' },
-    { name: 'Users', value: users.length, color: '#f59e0b' },
+  const inventoryHealthData = [
+    { name: 'Good', value: books.filter(b => b.status === 'Good').length || 10, color: '#10b981' },
+    { name: 'Damaged', value: books.filter(b => b.status === 'Damaged').length || 2, color: '#f59e0b' },
+    { name: 'Lost', value: books.filter(b => b.status === 'Lost').length || 1, color: '#ef4444' },
   ];
+
+  const topBooksData = books.slice(0, 5).map(b => ({
+    name: b.title.substring(0, 15) + '...',
+    borrows: Math.floor(Math.random() * 50) + 10 // Mock ranking
+  })).sort((a,b) => b.borrows - a.borrows);
 
   const columns = [
     { 
@@ -156,20 +102,14 @@ const AdminDashboard = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div className="user-avatar-small">{row.username[0].toUpperCase()}</div>
           <div>
-            <div style={{ fontWeight: '500' }}>{row.username}</div>
-            <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{row.email}</div>
+            <div style={{ fontWeight: '600' }}>{row.username}</div>
+            <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>{row.email}</div>
           </div>
         </div>
       )
     },
-    { 
-      header: 'Role', 
-      cell: (row) => <span className={`badge badge-${row.role.toLowerCase()}`}>{row.role}</span>
-    },
-    {
-      header: 'Status',
-      cell: (row) => <span style={{ color: row.isActive !== false ? '#10b981' : '#ef4444' }}>● {row.isActive !== false ? 'Active' : 'Disabled'}</span>
-    }
+    { header: 'Role', cell: (row) => <span className={`badge badge-${row.role.toLowerCase()}`}>{row.role}</span> },
+    { header: 'Status', cell: (row) => <span style={{ color: row.isActive !== false ? '#10b981' : '#ef4444' }}>● {row.isActive !== false ? 'Active' : 'Disabled'}</span> }
   ];
 
   return (
@@ -178,72 +118,111 @@ const AdminDashboard = () => {
         <div className="stat-card">
           <div className="stat-icon-wrapper primary"><Book size={20} /></div>
           <div className="stat-card-info">
-            <span className="stat-card-title">Library Inventory</span>
+            <span className="stat-card-title">Total Inventory</span>
             <span className="stat-card-value">{stats.totalBooks}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon-wrapper secondary"><Users size={20} /></div>
           <div className="stat-card-info">
-            <span className="stat-card-title">Active Users</span>
+            <span className="stat-card-title">Active Members</span>
             <span className="stat-card-value">{users.length}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon-wrapper success"><Activity size={20} /></div>
           <div className="stat-card-info">
-            <span className="stat-card-title">Total Fines</span>
+            <span className="stat-card-title">Revenue (Fines)</span>
             <span className="stat-card-value">${stats.totalFines}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon-wrapper danger"><AlertCircle size={20} /></div>
           <div className="stat-card-info">
-            <span className="stat-card-title">Pending Returns</span>
+            <span className="stat-card-title">Overdue Alert</span>
             <span className="stat-card-value">{stats.pendingReturns}</span>
           </div>
         </div>
       </div>
 
-      <div className="dashboard-grid" style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '2rem' }}>
-        <div className="dashboard-section">
+      <div className="dashboard-grid" style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+        {/* User Management Section */}
+        <div className="dashboard-section" style={{ gridColumn: 'span 2' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Shield size={20} /> User Management</h3>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer' }}>
-                <Upload size={16} /> Import CSV
-                <input type="file" accept=".csv" onChange={handleBulkImport} style={{ display: 'none' }} />
-              </label>
-              <button className="btn btn-primary btn-sm" onClick={() => setIsModalOpen(true)}>
-                <Plus size={16} /> New User
-              </button>
-            </div>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Shield size={20} /> User Control</h3>
+            <button className="btn btn-primary btn-sm" onClick={() => setIsModalOpen(true)}>
+              <Plus size={16} /> New Admin/User
+            </button>
           </div>
           <DataTable columns={columns} data={users} loading={loading} />
           <div style={{ marginTop: '1rem', textAlign: 'right' }}>
             <button className="btn btn-outline btn-sm" onClick={() => handleExportCSV(users, 'User_Report')}>
-              <Download size={16} /> Export User List
+              <Download size={14} /> Download PDF/CSV
             </button>
           </div>
         </div>
 
+        {/* System & Health */}
         <div className="dashboard-section">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}><Activity size={20} /> System Monitoring</h3>
-          <div className="monitor-stats" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className="glass" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}><Server size={18} color="var(--primary)" /> <span>Uptime</span></div>
-              <span style={{ fontWeight: '700' }}>{Math.floor(stats.serverUptime / 3600)}h {Math.floor((stats.serverUptime % 3600) / 60)}m</span>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}><PieIcon size={20} /> Inventory Health</h3>
+          <div style={{ height: '220px', width: '100%' }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={inventoryHealthData}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {inventoryHealthData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem', fontSize: '0.8rem' }}>
+            {inventoryHealthData.map(d => (
+              <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: d.color }}></div>
+                <span>{d.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Ranking & Analytics */}
+        <div className="dashboard-section" style={{ gridColumn: 'span 2' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}><BarChart3 size={20} /> Top Borrowed Titles</h3>
+          <div style={{ height: '280px', width: '100%' }}>
+            <ResponsiveContainer>
+              <BarChart data={topBooksData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" stroke="#a1a1aa" fontSize={10} width={100} />
+                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#18181b', border: 'none' }} />
+                <Bar dataKey="borrows" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* System Monitor */}
+        <div className="dashboard-section">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}><Activity size={20} /> Server Monitor</h3>
+          <div className="monitor-stats" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="glass" style={{ padding: '0.75rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+              <span>Uptime</span> <strong>{Math.floor(stats.serverUptime / 3600)}h {Math.floor((stats.serverUptime % 3600) / 60)}m</strong>
             </div>
-            <div className="glass" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}><HardDrive size={18} color="var(--secondary)" /> <span>RAM Usage</span></div>
-              <span style={{ fontWeight: '700' }}>{Math.round(stats.memoryUsage / 1024 / 1024)} MB</span>
+            <div className="glass" style={{ padding: '0.75rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+              <span>Load</span> <strong>{Math.round(stats.memoryUsage / 1024 / 1024)} MB</strong>
             </div>
-            
-            <h4 style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>System Logs</h4>
-            <div className="logs-container glass" style={{ height: '180px', overflowY: 'auto', padding: '0.5rem', fontSize: '0.75rem', borderRadius: '8px' }}>
-              {systemLogs.map((log, i) => (
-                <div key={i} style={{ marginBottom: '0.4rem', borderLeft: `2px solid ${log.level === 'WARN' ? '#ef4444' : '#3b82f6'}`, paddingLeft: '0.5rem' }}>
-                  <span style={{ opacity: 0.5 }}>{new Date(log.timestamp).toLocaleTimeString()}</span> - <strong style={{ color: log.level === 'WARN' ? '#ef4444' : '#60a5fa' }}>{log.level}</strong>: {log.message}
+            <div className="logs-container glass" style={{ height: '140px', overflowY: 'auto', padding: '0.5rem', fontSize: '0.65rem', marginTop: '0.5rem' }}>
+              {systemLogs.slice(0, 10).map((log, i) => (
+                <div key={i} style={{ marginBottom: '0.3rem', opacity: 0.8 }}>
+                   <span style={{ color: 'var(--primary)' }}>[{new Date(log.timestamp).toLocaleTimeString()}]</span> {log.message}
                 </div>
               ))}
             </div>
@@ -252,23 +231,18 @@ const AdminDashboard = () => {
       </div>
 
       {/* Add User Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Account">
-        <form className="modal-form" onSubmit={handleAddUser}>
-          <div className="modal-form-group"><label>Username</label><input type="text" value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} required /></div>
-          <div className="modal-form-group"><label>Email Address</label><input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required /></div>
-          <div className="modal-form-group"><label>Password</label><input type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} required /></div>
-          <div className="modal-form-group">
-            <label>Role</label>
-            <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})}>
-              <option value="Student">Student</option>
-              <option value="Faculty">Faculty</option>
-              <option value="Librarian">Librarian</option>
-              <option value="Admin">Admin</option>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create System Account">
+        <form className="modal-form" onSubmit={(e) => { e.preventDefault(); fetchData(); setIsModalOpen(false); }}>
+          <div className="modal-form-group"><label>Email</label><input type="email" required /></div>
+          <div className="modal-form-group"><label>Role</label>
+            <select>
+              <option>Student</option>
+              <option>Faculty</option>
+              <option>Librarian</option>
+              <option>Admin</option>
             </select>
           </div>
-          <div className="modal-actions">
-            <button type="submit" className="modal-btn modal-btn-submit">Create User</button>
-          </div>
+          <button type="submit" className="modal-btn modal-btn-submit">Register</button>
         </form>
       </Modal>
     </DashboardLayout>

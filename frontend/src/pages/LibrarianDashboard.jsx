@@ -166,6 +166,34 @@ const LibrarianDashboard = () => {
     }
   };
 
+  const handleUpdateRecommendation = async (id, status) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/recommendations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        alert(`Recommendation ${status}!`);
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const recColumns = [
+    { header: 'Book', cell: (row) => <div><strong>{row.title}</strong><div style={{ fontSize: '0.7rem', opacity: 0.6 }}>By {row.author}</div></div> },
+    { header: 'Faculty', cell: (row) => row.faculty?.username || 'Unknown' },
+    { header: 'Reason', accessor: 'reason' },
+    { header: 'Action', cell: (row) => (
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button className="btn-icon success" onClick={() => handleUpdateRecommendation(row._id, 'Approved')}><Check size={16} /></button>
+        <button className="btn-icon danger" onClick={() => handleUpdateRecommendation(row._id, 'Rejected')}><CloseIcon size={16} /></button>
+      </div>
+    )}
+  ];
+
   const overdueTransactions = transactions.filter(t => {
     return t.status === 'Issued' && new Date(t.dueDate) < new Date();
   });
@@ -271,6 +299,17 @@ const LibrarianDashboard = () => {
               </button>
             </div>
             <DataTable columns={bookColumns} data={books} loading={loading} />
+          </div>
+
+          <div className="dashboard-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3>Faculty Recommendations</h3>
+            </div>
+            <DataTable 
+              columns={recColumns} 
+              data={recommendations.filter(r => r.status === 'Pending')} 
+              loading={loading} 
+            />
           </div>
 
           <div className="dashboard-section">
