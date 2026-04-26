@@ -66,9 +66,13 @@ const LibrarianDashboard = () => {
         body: JSON.stringify(bookForm)
       });
       if (res.ok) {
+        alert("✅ Book added to catalog successfully!");
         setIsBookModalOpen(false);
         setBookForm({ title: '', author: '', subject: '', isbn: '', edition: '', totalCopies: '', shelfLocation: '', category: '' });
         fetchData();
+      } else {
+        const data = await res.json();
+        alert("❌ Failed to add book: " + (data.error || "Please check all fields"));
       }
     } catch (err) {
       console.error(err);
