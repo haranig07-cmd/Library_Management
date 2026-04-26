@@ -1,6 +1,8 @@
-# 📚 EduLib - Library Management System
+# 📚 InnovateX EduLib - Smart Digital Library System
 
-A modern, full-stack (MERN) Library Management System designed for universities.
+A professional, university-grade Library Management System built with the MERN stack.
+
+**Live Demo:** [https://innovatex-edulib-smart-library.vercel.app](https://innovatex-edulib-smart-library.vercel.app)
 
 ## 📂 Project Structure
 
