@@ -51,17 +51,17 @@ app.listen(PORT, () => {
 });
 
 // Connect to database in background
+console.log('Attempting to connect to MongoDB...');
 mongoose.connect(process.env.MONGO_URI).then(async () => {
-  console.log('MongoDB Connected');
+  console.log('✅ MongoDB Connected successfully');
   
-  // Auto-seeder to prevent empty database
   try {
     const User = require('./models/User');
     const Book = require('./models/Book');
     
     const userCount = await User.countDocuments();
     if (userCount === 0) {
-      console.log('Database is empty. Auto-seeding default users...');
+      console.log('🔍 Database is empty. Auto-seeding default users...');
       await User.create([
         { username: 'admin01', email: 'admin@edulib.edu', password: 'password123', role: 'Admin' },
         { username: 'librarian01', email: 'librarian@edulib.edu', password: 'password123', role: 'Librarian' },
