@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookUp, Edit, Trash2, Check, X as CloseIcon } from 'lucide-react';
+import { Plus, BookUp, Edit, Trash2, Check, X as CloseIcon, Layout, Database, Clock, BookOpen } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -148,27 +148,33 @@ const LibrarianDashboard = () => {
     }
   };
 
-  const handleUpdateRec = async (id, status) => {
-    try {
-      await fetch(`${API_BASE_URL}/recommendations/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ status })
-      });
-      fetchData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const bookColumns = [
-    { header: 'Title', accessor: 'title' },
-    { header: 'Author', accessor: 'author' },
-    { header: 'Copies', cell: (row) => `${row.availableCopies} / ${row.totalCopies}` },
+    { 
+      header: 'Book Details', 
+      cell: (row) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="book-icon-small"><BookOpen size={16} /></div>
+          <div>
+            <div style={{ fontWeight: '500' }}>{row.title}</div>
+            <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{row.author}</div>
+          </div>
+        </div>
+      )
+    },
+    { header: 'Subject', accessor: 'subject' },
+    { 
+      header: 'Availability', 
+      cell: (row) => (
+        <div className="availability-pill">
+          <div className="bar"><div className="fill" style={{ width: `${(row.availableCopies/row.totalCopies)*100}%` }}></div></div>
+          <span>{row.availableCopies} / {row.totalCopies}</span>
+        </div>
+      )
+    },
     { header: 'Actions', cell: (row) => (
       <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <button onClick={() => handleEditBook(row)} style={{ border: 'none', background: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={16} /></button>
-        <button onClick={() => handleDeleteBook(row._id)} style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={16} /></button>
+        <button onClick={() => handleEditBook(row)} className="btn-icon"><Edit size={16} /></button>
+        <button onClick={() => handleDeleteBook(row._id)} className="btn-icon btn-icon-danger"><Trash2 size={16} /></button>
       </div>
     )}
   ];
@@ -176,127 +182,114 @@ const LibrarianDashboard = () => {
   const transColumns = [
     { header: 'Book', cell: (row) => row.book?.title || 'Unknown' },
     { header: 'User', cell: (row) => row.user?.username || 'Unknown' },
-    { header: 'Status', cell: (row) => <span className={`badge ${row.status === 'Issued' ? 'badge-warning' : row.status === 'Returned' ? 'badge-success' : 'badge-danger'}`}>{row.status}</span> },
+    { 
+      header: 'Status', 
+      cell: (row) => (
+        <span className={`badge badge-${row.status.toLowerCase().replace(' ', '-')}`}>
+          {row.status}
+        </span>
+      )
+    },
     { header: 'Action', cell: (row) => (
-      row.status === 'Issued' ? <button className="btn btn-primary" onClick={() => handleReturnBook(row._id)} style={{padding: '0.2rem 0.5rem', fontSize: '0.75rem'}}>Return</button> :
+      row.status === 'Issued' ? <button className="btn btn-primary btn-sm" onClick={() => handleReturnBook(row._id)}>Return Book</button> :
       row.status === 'Pending Approval' ? (
-        <div style={{ display: 'flex', gap: '0.2rem' }}>
-          <button onClick={() => handleUpdateRequest(row._id, 'Issued')} style={{ border: 'none', background: 'none', color: '#10b981' }}><Check size={16} /></button>
-          <button onClick={() => handleUpdateRequest(row._id, 'Rejected')} style={{ border: 'none', background: 'none', color: '#ef4444' }}><CloseIcon size={16} /></button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn-icon success" onClick={() => handleUpdateRequest(row._id, 'Issued')}><Check size={16} /></button>
+          <button className="btn-icon danger" onClick={() => handleUpdateRequest(row._id, 'Rejected')}><CloseIcon size={16} /></button>
         </div>
       ) : '-'
     )}
   ];
 
-  const recColumns = [
-    { header: 'Title', accessor: 'title' },
-    { header: 'Faculty', cell: (row) => row.faculty?.username || 'Unknown' },
-    { header: 'Action', cell: (row) => (
-      row.status === 'Pending' ? (
-        <div style={{ display: 'flex', gap: '0.2rem' }}>
-          <button onClick={() => handleUpdateRec(row._id, 'Accepted')} style={{ border: 'none', background: 'none', color: '#10b981' }}>Accept</button>
-          <button onClick={() => handleUpdateRec(row._id, 'Rejected')} style={{ border: 'none', background: 'none', color: '#ef4444' }}>Reject</button>
-        </div>
-      ) : row.status
-    )}
-  ];
-
   return (
-    <DashboardLayout role="Librarian" title="Librarian Control Center">
+    <DashboardLayout role="Librarian" title="Librarian Resource Center">
       <div className="stat-cards-grid">
-        <div className="stat-card"><span className="stat-card-title">Total Books</span><span className="stat-card-value">{books.length}</span></div>
-        <div className="stat-card"><span className="stat-card-title">Pending Requests</span><span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span></div>
-        <div className="stat-card"><span className="stat-card-title">Active Issues</span><span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span></div>
-      </div>
-
-      <div id="requests">
-        {transactions.some(t => t.status === 'Pending Approval') && (
-          <div className="dashboard-section" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-            <h3 style={{ color: '#ef4444' }}>Pending Book Requests</h3>
-            <DataTable columns={transColumns} data={transactions.filter(t => t.status === 'Pending Approval')} loading={loading} />
+        <div className="stat-card">
+          <div className="stat-icon-wrapper secondary"><Database size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Catalog Size</span>
+            <span className="stat-card-value">{books.length}</span>
           </div>
-        )}
-
-        {recommendations.some(r => r.status === 'Pending') && (
-          <div className="dashboard-section">
-            <h3 style={{ color: 'var(--secondary)' }}>Faculty Book Recommendations</h3>
-            <DataTable columns={recColumns} data={recommendations.filter(r => r.status === 'Pending')} loading={loading} />
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon-wrapper danger"><Layout size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Pending Requests</span>
+            <span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span>
           </div>
-        )}
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon-wrapper success"><Clock size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Active Loans</span>
+            <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
+          </div>
+        </div>
       </div>
 
-      <div className="dashboard-section" id="inventory">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3>Book Inventory</h3>
-          <button className="btn btn-primary" onClick={() => setIsBookModalOpen(true)}><Plus size={18} /> Add Book</button>
+      <div className="dashboard-grid" style={{ marginTop: '2rem' }}>
+        <div className="dashboard-section" id="inventory" style={{ gridColumn: 'span 3' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3>Book Inventory</h3>
+            <button className="btn btn-primary" onClick={() => setIsBookModalOpen(true)}>
+              <Plus size={18} /> Add New Title
+            </button>
+          </div>
+          <DataTable columns={bookColumns} data={books} loading={loading} />
         </div>
-        <DataTable columns={bookColumns} data={books} loading={loading} />
-      </div>
 
-      <div className="dashboard-section" id="transactions">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3>All Transactions</h3>
-          <button className="btn btn-primary" onClick={() => setIsIssueModalOpen(true)}><BookUp size={18} /> Issue Book</button>
+        <div className="dashboard-section" id="transactions" style={{ gridColumn: 'span 2' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3>Recent Activity</h3>
+            <button className="btn btn-secondary btn-sm" onClick={() => setIsIssueModalOpen(true)}>
+              <BookUp size={16} /> Quick Issue
+            </button>
+          </div>
+          <DataTable columns={transColumns} data={transactions} loading={loading} />
         </div>
-        <DataTable columns={transColumns} data={transactions.filter(t => t.status !== 'Pending Approval')} loading={loading} />
       </div>
 
       {/* Add Book Modal */}
-      <Modal isOpen={isBookModalOpen} onClose={() => setIsBookModalOpen(false)} title="Add New Book">
+      <Modal isOpen={isBookModalOpen} onClose={() => setIsBookModalOpen(false)} title="Register New Book">
         <form className="modal-form" onSubmit={handleAddBook}>
-          <div className="modal-form-group"><label>Title</label><input type="text" value={bookForm.title} onChange={e => setBookForm({...bookForm, title: e.target.value})} required /></div>
+          <div className="modal-form-group"><label>Book Title</label><input type="text" value={bookForm.title} onChange={e => setBookForm({...bookForm, title: e.target.value})} required /></div>
           <div className="modal-form-group"><label>Author</label><input type="text" value={bookForm.author} onChange={e => setBookForm({...bookForm, author: e.target.value})} required /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="modal-form-group"><label>Subject</label><input type="text" value={bookForm.subject} onChange={e => setBookForm({...bookForm, subject: e.target.value})} required /></div>
-            <div className="modal-form-group"><label>ISBN</label><input type="text" value={bookForm.isbn} onChange={e => setBookForm({...bookForm, isbn: e.target.value})} required /></div>
+            <div className="modal-form-group"><label>Subject Area</label><input type="text" value={bookForm.subject} onChange={e => setBookForm({...bookForm, subject: e.target.value})} required /></div>
+            <div className="modal-form-group"><label>ISBN Code</label><input type="text" value={bookForm.isbn} onChange={e => setBookForm({...bookForm, isbn: e.target.value})} required /></div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="modal-form-group"><label>Edition</label><input type="text" value={bookForm.edition} onChange={e => setBookForm({...bookForm, edition: e.target.value})} /></div>
-            <div className="modal-form-group"><label>Total Copies</label><input type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({...bookForm, totalCopies: e.target.value})} required /></div>
-          </div>
+          <div className="modal-form-group"><label>Total Inventory Copies</label><input type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({...bookForm, totalCopies: e.target.value})} required /></div>
           <div className="modal-actions">
             <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setIsBookModalOpen(false)}>Cancel</button>
-            <button type="submit" className="modal-btn modal-btn-submit">Add Book</button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Edit Book Modal */}
-      <Modal isOpen={isEditBookModalOpen} onClose={() => setIsEditBookModalOpen(false)} title="Edit Book">
-        <form className="modal-form" onSubmit={handleUpdateBook}>
-          <div className="modal-form-group"><label>Title</label><input type="text" value={bookForm.title} onChange={e => setBookForm({...bookForm, title: e.target.value})} required /></div>
-          <div className="modal-form-group"><label>Total Copies</label><input type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({...bookForm, totalCopies: e.target.value})} required /></div>
-          <div className="modal-actions">
-            <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setIsEditBookModalOpen(false)}>Cancel</button>
-            <button type="submit" className="modal-btn modal-btn-submit">Update Book</button>
+            <button type="submit" className="modal-btn modal-btn-submit">Add to Catalog</button>
           </div>
         </form>
       </Modal>
 
       {/* Issue Book Modal */}
-      <Modal isOpen={isIssueModalOpen} onClose={() => setIsIssueModalOpen(false)} title="Issue Book">
+      <Modal isOpen={isIssueModalOpen} onClose={() => setIsIssueModalOpen(false)} title="Direct Issue">
         <form className="modal-form" onSubmit={handleIssueBook}>
           <div className="modal-form-group">
-            <label>Select User</label>
+            <label>Member Account</label>
             <select value={issueForm.userId} onChange={e => setIssueForm({...issueForm, userId: e.target.value})} required>
-              <option value="">Choose User...</option>
+              <option value="">Select Member...</option>
               {users.map(u => <option key={u._id} value={u._id}>{u.username} ({u.role})</option>)}
             </select>
           </div>
           <div className="modal-form-group">
-            <label>Select Book</label>
+            <label>Book Title</label>
             <select value={issueForm.bookId} onChange={e => setIssueForm({...issueForm, bookId: e.target.value})} required>
-              <option value="">Choose Book...</option>
-              {books.filter(b => b.availableCopies > 0).map(b => <option key={b._id} value={b._id}>{b.title} ({b.availableCopies} left)</option>)}
+              <option value="">Select Book...</option>
+              {books.filter(b => b.availableCopies > 0).map(b => <option key={b._id} value={b._id}>{b.title} ({b.availableCopies} available)</option>)}
             </select>
           </div>
           <div className="modal-form-group">
             <label>Due Date</label>
-            <input type="date" value={issueForm.dueDate} onChange={e => setIssueForm({...issueForm, dueDate: e.target.value})} required min={new Date().toISOString().split('T')[0]} />
+            <input type="date" value={issueForm.dueDate} onChange={e => setIssueForm({...issueForm, dueDate: e.target.value})} required />
           </div>
           <div className="modal-actions">
             <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setIsIssueModalOpen(false)}>Cancel</button>
-            <button type="submit" className="modal-btn modal-btn-submit">Issue Book</button>
+            <button type="submit" className="modal-btn modal-btn-submit">Process Issue</button>
           </div>
         </form>
       </Modal>

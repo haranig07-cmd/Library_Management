@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookPlus, History, MessageSquare } from 'lucide-react';
+import { BookPlus, History, MessageSquare, Search, BookOpen, Layers } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import BookCard from '../components/BookCard';
 import DataTable from '../components/DataTable';
@@ -88,36 +88,63 @@ const FacultyDashboard = () => {
   };
 
   const columns = [
-    { header: 'Book', cell: (row) => row.book?.title || 'Unknown' },
+    { 
+      header: 'Resource', 
+      cell: (row) => (
+        <div style={{ fontWeight: '500' }}>{row.book?.title || 'Unknown'}</div>
+      )
+    },
     { header: 'Due Date', cell: (row) => new Date(row.dueDate).toLocaleDateString() },
-    { header: 'Status', cell: (row) => <span className={`badge ${row.status === 'Issued' ? 'badge-warning' : 'badge-success'}`}>{row.status}</span> },
+    { 
+      header: 'Status', 
+      cell: (row) => (
+        <span className={`badge badge-${row.status.toLowerCase()}`}>
+          {row.status}
+        </span>
+      ) 
+    },
   ];
 
   return (
-    <DashboardLayout role="Faculty" title="Faculty Portal">
+    <DashboardLayout role="Faculty" title="Faculty Research Portal">
       <div className="stat-cards-grid">
         <div className="stat-card">
-          <BookPlus className="stat-icon" style={{ color: 'var(--primary)' }} />
-          <span className="stat-card-title">Assigned Books</span>
-          <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
+          <div className="stat-icon-wrapper primary"><BookOpen size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Active Resources</span>
+            <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
+          </div>
         </div>
         <div className="stat-card">
-          <History className="stat-icon" style={{ color: 'var(--secondary)' }} />
-          <span className="stat-card-title">Total Recommendations</span>
-          <span className="stat-card-value">{recommendations.length}</span>
+          <div className="stat-icon-wrapper secondary"><Layers size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Pending Approvals</span>
+            <span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon-wrapper success"><MessageSquare size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Recommendations</span>
+            <span className="stat-card-value">{recommendations.length}</span>
+          </div>
         </div>
       </div>
 
-      <div className="dashboard-section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3>Academic Resources</h3>
+      <div className="dashboard-section" style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Search size={20} className="text-primary" />
+            <h3 style={{ margin: 0 }}>Academic Catalog</h3>
+          </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
-              <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="search-input" />
-              <button type="submit" className="btn btn-primary">Search</button>
+            <form onSubmit={handleSearch} className="search-bar-premium">
+              <Search size={18} />
+              <input type="text" placeholder="Search resources..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <button type="submit" className="btn btn-primary btn-sm">Search</button>
             </form>
             <button className="btn btn-secondary" onClick={() => setIsRecommendModalOpen(true)}>
-              <MessageSquare size={18} /> Recommend
+              <BookPlus size={18} /> Suggest Purchase
             </button>
           </div>
         </div>
@@ -127,26 +154,29 @@ const FacultyDashboard = () => {
               key={book._id} 
               book={book} 
               onAction={() => handleReserve(book)}
-              actionLabel="Reserve for Class"
+              actionLabel="Reserve for Research"
             />
           ))}
         </div>
       </div>
 
-      <div className="dashboard-section">
-        <h3>My Issued Resources</h3>
+      <div className="dashboard-section" style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <History size={20} className="text-secondary" />
+          <h3 style={{ margin: 0 }}>Active Loans & History</h3>
+        </div>
         <DataTable columns={columns} data={transactions.filter(t => t.status === 'Issued')} loading={loading} />
       </div>
 
-      <Modal isOpen={isRecommendModalOpen} onClose={() => setIsRecommendModalOpen(false)} title="Recommend a New Book">
+      <Modal isOpen={isRecommendModalOpen} onClose={() => setIsRecommendModalOpen(false)} title="Recommend a New Resource">
         <form className="modal-form" onSubmit={handleRecommend}>
           <div className="modal-form-group"><label>Book Title</label><input type="text" value={recForm.title} onChange={e => setRecForm({...recForm, title: e.target.value})} required /></div>
           <div className="modal-form-group"><label>Author</label><input type="text" value={recForm.author} onChange={e => setRecForm({...recForm, author: e.target.value})} required /></div>
           <div className="modal-form-group"><label>Subject Area</label><input type="text" value={recForm.subject} onChange={e => setRecForm({...recForm, subject: e.target.value})} required /></div>
-          <div className="modal-form-group"><label>Reason for Recommendation</label><textarea value={recForm.reason} onChange={e => setRecForm({...recForm, reason: e.target.value})} required /></div>
+          <div className="modal-form-group"><label>Justification</label><textarea value={recForm.reason} onChange={e => setRecForm({...recForm, reason: e.target.value})} required placeholder="Why is this resource needed for your department?" /></div>
           <div className="modal-actions">
             <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setIsRecommendModalOpen(false)}>Cancel</button>
-            <button type="submit" className="modal-btn modal-btn-submit">Send Recommendation</button>
+            <button type="submit" className="modal-btn modal-btn-submit">Submit Request</button>
           </div>
         </form>
       </Modal>

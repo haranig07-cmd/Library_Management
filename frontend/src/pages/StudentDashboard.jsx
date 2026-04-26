@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BookOpen, Search, Clock, History, Calendar, CheckCircle } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import BookCard from '../components/BookCard';
 import DataTable from '../components/DataTable';
@@ -54,14 +55,11 @@ const StudentDashboard = () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert("Request sent to librarian successfully!");
+        alert("Request sent successfully!");
         fetchData();
-      } else {
-        alert(data.error || "Failed to send request");
       }
     } catch (err) {
       console.error(err);
-      alert("Error sending request");
     }
   };
 
@@ -70,34 +68,57 @@ const StudentDashboard = () => {
     { header: 'Author', cell: (row) => row.book?.author || 'Unknown' },
     { header: 'Issue Date', cell: (row) => new Date(row.issueDate).toLocaleDateString() },
     { header: 'Due Date', cell: (row) => new Date(row.dueDate).toLocaleDateString() },
-    { header: 'Status', cell: (row) => <span className={`badge ${row.status === 'Issued' ? 'badge-warning' : row.status === 'Returned' ? 'badge-success' : 'badge-danger'}`}>{row.status}</span> },
+    { 
+      header: 'Status', 
+      cell: (row) => (
+        <span className={`badge badge-${row.status.toLowerCase().replace(' ', '-')}`}>
+          {row.status}
+        </span>
+      ) 
+    },
   ];
 
   return (
-    <DashboardLayout role="Student" title="Student Resource Center">
+    <DashboardLayout role="Student" title="My Learning Portal">
       <div className="stat-cards-grid">
         <div className="stat-card">
-          <span className="stat-card-title">Currently Borrowed</span>
-          <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
+          <div className="stat-icon-wrapper primary"><BookOpen size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Currently Borrowed</span>
+            <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
+          </div>
         </div>
         <div className="stat-card">
-          <span className="stat-card-title">Pending Requests</span>
-          <span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span>
+          <div className="stat-icon-wrapper secondary"><Clock size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Pending Requests</span>
+            <span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon-wrapper success"><CheckCircle size={20} /></div>
+          <div className="stat-card-info">
+            <span className="stat-card-title">Returned Books</span>
+            <span className="stat-card-value">{transactions.filter(t => t.status === 'Returned').length}</span>
+          </div>
         </div>
       </div>
 
-      <div className="dashboard-section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h3>Available Books</h3>
-          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
+      <div className="dashboard-section" style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Search size={20} className="text-primary" />
+            <h3 style={{ margin: 0 }}>Explore Library Catalog</h3>
+          </div>
+          <form onSubmit={handleSearch} className="search-bar-premium">
+            <Search size={18} />
             <input 
               type="text" 
-              placeholder="Search books..." 
+              placeholder="Search by title, author or ISBN..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="search-input"
             />
-            <button type="submit" className="btn btn-primary">Search</button>
+            <button type="submit" className="btn btn-primary btn-sm">Find Books</button>
           </form>
         </div>
         <div className="books-grid">
@@ -106,15 +127,18 @@ const StudentDashboard = () => {
               key={book._id} 
               book={book} 
               onAction={() => handleRequestIssue(book)}
-              actionLabel={transactions.some(t => t.book?._id === book._id && t.status === 'Pending Approval') ? "Requested" : "Request Issue"}
+              actionLabel={transactions.some(t => t.book?._id === book._id && t.status === 'Pending Approval') ? "Request Sent" : "Request This Book"}
               disabled={transactions.some(t => t.book?._id === book._id && t.status === 'Pending Approval') || book.availableCopies === 0}
             />
           ))}
         </div>
       </div>
 
-      <div className="dashboard-section">
-        <h3>My Borrowing History</h3>
+      <div className="dashboard-section" style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <History size={20} className="text-secondary" />
+          <h3 style={{ margin: 0 }}>Personal Borrowing History</h3>
+        </div>
         <DataTable columns={columns} data={transactions.filter(t => t.status !== 'Pending Approval')} loading={loading} />
       </div>
     </DashboardLayout>
