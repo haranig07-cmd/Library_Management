@@ -1,22 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Menu, X, Bell, LogOut, User, LayoutDashboard, 
-  Users, BookOpen, FileText, Database, Clock, Settings
-} from 'lucide-react';
+import { API_BASE_URL } from '../api';
 import './DashboardLayout.css';
 
 const DashboardLayout = ({ children, role, title }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const userData = JSON.parse(localStorage.getItem('user') || '{}');
-
+  // ...
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/notifications', {
+      const res = await fetch(`${API_BASE_URL}/notifications`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -36,7 +25,7 @@ const DashboardLayout = ({ children, role, title }) => {
     setNotifOpen(!notifOpen);
     if (!notifOpen && notifications.some(n => !n.isRead)) {
       try {
-        await fetch('http://localhost:5000/api/notifications/read', {
+        await fetch(`${API_BASE_URL}/notifications/read`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });

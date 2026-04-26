@@ -1,29 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Users, Book, Clock, AlertCircle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import DashboardLayout from '../components/DashboardLayout';
-import DataTable from '../components/DataTable';
-import Modal from '../components/Modal';
-import CountUp from '../components/CountUp';
+import { API_BASE_URL } from '../api';
 
 const AdminDashboard = () => {
-  const [users, setUsers] = useState([]);
-  const [stats, setStats] = useState({ totalBooks: 0, issuedBooks: 0, pendingReturns: 0 });
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userForm, setUserForm] = useState({ username: '', email: '', password: '', role: 'Student' });
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-
+  // ...
   const fetchData = async () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
       const [usersRes, booksRes, transRes] = await Promise.all([
-        fetch('http://localhost:5000/api/users', { headers }),
-        fetch('http://localhost:5000/api/books', { headers }),
-        fetch('http://localhost:5000/api/transactions', { headers })
+        fetch(`${API_BASE_URL}/users`, { headers }),
+        fetch(`${API_BASE_URL}/books`, { headers }),
+        fetch(`${API_BASE_URL}/transactions`, { headers })
       ]);
       
       const usersData = await usersRes.json();
@@ -57,7 +43,7 @@ const AdminDashboard = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/users', {
+      const res = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify(userForm)
@@ -84,7 +70,7 @@ const AdminDashboard = () => {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${currentUser._id}`, {
+      const res = await fetch(`${API_BASE_URL}/users/${currentUser._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify(userForm)
@@ -104,7 +90,7 @@ const AdminDashboard = () => {
   const handleDeleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -118,7 +104,7 @@ const AdminDashboard = () => {
 
   const handleBackup = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/system/backup', {
+      const res = await fetch(`${API_BASE_URL}/system/backup`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();

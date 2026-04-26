@@ -1,28 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { BookPlus, History, MessageSquare } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
-import BookCard from '../components/BookCard';
-import DataTable from '../components/DataTable';
-import Modal from '../components/Modal';
+import { API_BASE_URL } from '../api';
 
 const FacultyDashboard = () => {
-  const [books, setBooks] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [isRecommendModalOpen, setIsRecommendModalOpen] = useState(false);
-  const [recForm, setRecForm] = useState({ title: '', author: '', subject: '', reason: '' });
-
+  // ...
   const fetchData = async (query = '') => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
-      const url = query ? `http://localhost:5000/api/books?search=${query}` : 'http://localhost:5000/api/books';
+      const url = query ? `${API_BASE_URL}/books?search=${query}` : `${API_BASE_URL}/books`;
       
       const [booksRes, transRes] = await Promise.all([
         fetch(url, { headers }),
-        fetch('http://localhost:5000/api/transactions/my', { headers })
+        fetch(`${API_BASE_URL}/transactions/my`, { headers })
       ]);
       
       const booksData = await booksRes.json();
@@ -48,7 +36,7 @@ const FacultyDashboard = () => {
 
   const handleReserve = async (book) => {
     try {
-      const res = await fetch('http://localhost:5000/api/transactions/request', {
+      const res = await fetch(`${API_BASE_URL}/transactions/request`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -72,7 +60,7 @@ const FacultyDashboard = () => {
   const handleRecommend = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/recommendations', {
+      const res = await fetch(`${API_BASE_URL}/recommendations`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 

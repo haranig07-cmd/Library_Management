@@ -1,29 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
-import { User, Mail, Shield, Calendar, Lock, Save } from 'lucide-react';
+import { API_BASE_URL } from '../api';
 
 const Profile = () => {
-  const userData = JSON.parse(localStorage.getItem('user') || '{}');
-  const [profile, setProfile] = useState({
-    username: userData.username || '',
-    email: userData.email || '',
-    role: userData.role || ''
-  });
-  
-  const [passwords, setPasswords] = useState({
-    current: '',
-    new: '',
-    confirm: ''
-  });
-  
-  const [message, setMessage] = useState({ type: '', text: '' });
-
+  // ...
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setMessage({ type: 'info', text: 'Updating profile...' });
     
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${userData._id}`, {
+      const res = await fetch(`${API_BASE_URL}/users/${userData._id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

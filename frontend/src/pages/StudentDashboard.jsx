@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
-import BookCard from '../components/BookCard';
-import DataTable from '../components/DataTable';
+import { API_BASE_URL } from '../api';
 
 const StudentDashboard = () => {
   const [books, setBooks] = useState([]);
@@ -12,12 +9,12 @@ const StudentDashboard = () => {
   const fetchData = async (query = '') => {
     setLoading(true);
     try {
-      const url = query ? `http://localhost:5000/api/books?search=${query}` : 'http://localhost:5000/api/books';
+      const url = query ? `${API_BASE_URL}/books?search=${query}` : `${API_BASE_URL}/books`;
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
       
       const [booksRes, transRes] = await Promise.all([
         fetch(url, { headers }),
-        fetch('http://localhost:5000/api/transactions/my', { headers })
+        fetch(`${API_BASE_URL}/transactions/my`, { headers })
       ]);
       
       const booksData = await booksRes.json();
@@ -43,7 +40,7 @@ const StudentDashboard = () => {
 
   const handleRequestIssue = async (book) => {
     try {
-      const res = await fetch('http://localhost:5000/api/transactions/request', {
+      const res = await fetch(`${API_BASE_URL}/transactions/request`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 

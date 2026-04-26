@@ -1,33 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, BookUp, Filter, Search, Edit, Trash2, Check, X as CloseIcon } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
-import DataTable from '../components/DataTable';
-import Modal from '../components/Modal';
+import { API_BASE_URL } from '../api';
 
 const LibrarianDashboard = () => {
-  const [books, setBooks] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
-  const [isEditBookModalOpen, setIsEditBookModalOpen] = useState(false);
-  const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
-  
-  const [currentBook, setCurrentBook] = useState(null);
-  const [bookForm, setBookForm] = useState({ title: '', author: '', subject: '', isbn: '', edition: '', totalCopies: '' });
-  const [issueForm, setIssueForm] = useState({ userId: '', bookId: '', dueDate: '' });
-
+  // ...
   const fetchData = async () => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
       const [booksRes, usersRes, transRes, recRes] = await Promise.all([
-        fetch('http://localhost:5000/api/books', { headers }),
-        fetch('http://localhost:5000/api/users', { headers }),
-        fetch('http://localhost:5000/api/transactions', { headers }),
-        fetch('http://localhost:5000/api/recommendations', { headers })
+        fetch(`${API_BASE_URL}/books`, { headers }),
+        fetch(`${API_BASE_URL}/users`, { headers }),
+        fetch(`${API_BASE_URL}/transactions`, { headers }),
+        fetch(`${API_BASE_URL}/recommendations`, { headers })
       ]);
       
       const booksData = await booksRes.json();
@@ -53,7 +36,7 @@ const LibrarianDashboard = () => {
   const handleAddBook = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/books', {
+      const res = await fetch(`${API_BASE_URL}/books`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify(bookForm)
@@ -77,7 +60,7 @@ const LibrarianDashboard = () => {
   const handleUpdateBook = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://localhost:5000/api/books/${currentBook._id}`, {
+      const res = await fetch(`${API_BASE_URL}/books/${currentBook._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify(bookForm)
@@ -94,7 +77,7 @@ const LibrarianDashboard = () => {
   const handleDeleteBook = async (id) => {
     if (!window.confirm("Delete this book?")) return;
     try {
-      await fetch(`http://localhost:5000/api/books/${id}`, {
+      await fetch(`${API_BASE_URL}/books/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -107,7 +90,7 @@ const LibrarianDashboard = () => {
   const handleIssueBook = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/transactions/issue', {
+      const res = await fetch(`${API_BASE_URL}/transactions/issue`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify(issueForm)
@@ -124,7 +107,7 @@ const LibrarianDashboard = () => {
 
   const handleReturnBook = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/transactions/return/${id}`, {
+      await fetch(`${API_BASE_URL}/transactions/return/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -136,7 +119,7 @@ const LibrarianDashboard = () => {
 
   const handleUpdateRequest = async (id, status) => {
     try {
-      await fetch(`http://localhost:5000/api/transactions/request/${id}`, {
+      await fetch(`${API_BASE_URL}/transactions/request/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ status })
@@ -149,7 +132,7 @@ const LibrarianDashboard = () => {
 
   const handleUpdateRec = async (id, status) => {
     try {
-      await fetch(`http://localhost:5000/api/recommendations/${id}`, {
+      await fetch(`${API_BASE_URL}/recommendations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ status })

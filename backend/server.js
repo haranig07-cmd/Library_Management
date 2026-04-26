@@ -19,7 +19,10 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://library-management-snowy-chi.vercel.app'],
+  credentials: true
+}));
 
 // Mount routers
 app.use('/api/auth', authRoutes);
