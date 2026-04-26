@@ -1,7 +1,25 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, BookUp, Edit, Trash2, Check, X as CloseIcon } from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
+import DataTable from '../components/DataTable';
+import Modal from '../components/Modal';
 import { API_BASE_URL } from '../api';
 
 const LibrarianDashboard = () => {
-  // ...
+  const [books, setBooks] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [isEditBookModalOpen, setIsEditBookModalOpen] = useState(false);
+  const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
+  
+  const [currentBook, setCurrentBook] = useState(null);
+  const [bookForm, setBookForm] = useState({ title: '', author: '', subject: '', isbn: '', edition: '', totalCopies: '' });
+  const [issueForm, setIssueForm] = useState({ userId: '', bookId: '', dueDate: '' });
+
   const fetchData = async () => {
     setLoading(true);
     try {

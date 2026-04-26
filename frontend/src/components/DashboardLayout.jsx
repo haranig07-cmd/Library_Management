@@ -1,8 +1,20 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Menu, X, Bell, LogOut, User, LayoutDashboard, 
+  Users, BookOpen, FileText, Database, Clock, Settings
+} from 'lucide-react';
 import { API_BASE_URL } from '../api';
 import './DashboardLayout.css';
 
 const DashboardLayout = ({ children, role, title }) => {
-  // ...
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
   const fetchNotifications = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/notifications`, {
@@ -29,7 +41,6 @@ const DashboardLayout = ({ children, role, title }) => {
           method: 'PUT',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        fetchNotifications();
       } catch (err) {
         console.error(err);
       }
@@ -43,137 +54,128 @@ const DashboardLayout = ({ children, role, title }) => {
     navigate('/login');
   };
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
-  const getSidebarLinks = () => {
-    const dashboardPath = `/${role.toLowerCase()}-dashboard`;
-    switch(role) {
-      case 'Admin':
-        return [
-          { name: 'Dashboard', icon: LayoutDashboard, path: dashboardPath },
-          { name: 'Users', icon: Users, path: '#users' },
-          { name: 'Reports', icon: FileText, path: '#reports' },
-          { name: 'System', icon: Settings, path: '#system' },
-        ];
-      case 'Librarian':
-        return [
-          { name: 'Dashboard', icon: LayoutDashboard, path: dashboardPath },
-          { name: 'Inventory', icon: BookOpen, path: '#inventory' },
-          { name: 'Transactions', icon: Clock, path: '#transactions' },
-          { name: 'Requests', icon: Bell, path: '#requests' },
-        ];
-      case 'Faculty':
-        return [
-          { name: 'Dashboard', icon: LayoutDashboard, path: dashboardPath },
-          { name: 'Catalog', icon: BookOpen, path: '#catalog' },
-          { name: 'History', icon: Clock, path: '#history' },
-          { name: 'Recommend', icon: FileText, path: '#recommend' },
-        ];
-      case 'Student':
-        return [
-          { name: 'Dashboard', icon: LayoutDashboard, path: dashboardPath },
-          { name: 'Search', icon: BookOpen, path: '#search' },
-          { name: 'Borrowed', icon: Clock, path: '#borrowed' },
-        ];
-      default:
-        return [];
-    }
+  const menuItems = {
+    Admin: [
+      { path: '/admin-dashboard', icon: LayoutDashboard, label: 'Overview' },
+      { path: '/admin-dashboard#users', icon: Users, label: 'Users' },
+      { path: '/admin-dashboard#system', icon: Settings, label: 'System' },
+    ],
+    Librarian: [
+      { path: '/librarian-dashboard', icon: LayoutDashboard, label: 'Control Center' },
+      { path: '/librarian-dashboard#inventory', icon: BookOpen, label: 'Books' },
+      { path: '/librarian-dashboard#transactions', icon: FileText, label: 'History' },
+    ],
+    Faculty: [
+      { path: '/faculty-dashboard', icon: LayoutDashboard, label: 'Portal' },
+      { path: '/faculty-dashboard#history', icon: Clock, label: 'Borrowed' },
+    ],
+    Student: [
+      { path: '/student-dashboard', icon: LayoutDashboard, label: 'Resources' },
+      { path: '/student-dashboard#history', icon: Clock, label: 'History' },
+    ]
   };
 
-  const links = getSidebarLinks();
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  const scrollToSection = (e, path) => {
-    if (path.startsWith('#')) {
-      e.preventDefault();
-      const id = path.substring(1);
-      const element = document.getElementById(id);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-      setSidebarOpen(false);
-    }
-  };
+  const currentMenu = menuItems[role] || [];
 
   return (
-    <div className="dashboard-layout">
-      {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
+    <div className="dashboard-wrapper">
+      {/* Mobile Backdrop */}
+      {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>}
 
+      {/* Sidebar */}
       <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <h3>EduLib</h3>
-          <button className="mobile-close-btn" onClick={toggleSidebar}><X size={20} /></button>
+          <div className="sidebar-logo">
+            <div className="logo-icon">E</div>
+            <span>EduLib</span>
+          </div>
+          <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
-        
-        <nav className="sidebar-nav">
-          {links.map((link, index) => {
-            const Icon = link.icon;
-            const isActive = link.path.startsWith('#') ? false : location.pathname === link.path;
-            return (
-              <Link 
-                to={link.path} 
-                key={index} 
-                className={`sidebar-link ${isActive ? 'active' : ''}`} 
-                onClick={(e) => scrollToSection(e, link.path)}
-              >
-                <Icon size={18} />
-                <span>{link.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
 
-        <div className="sidebar-footer">
-          <button className="logout-btn" onClick={handleLogout}><LogOut size={18} /><span>Logout</span></button>
-        </div>
+        <nav className="sidebar-nav">
+          <div className="nav-section">Main Menu</div>
+          {currentMenu.map((item) => (
+            <Link 
+              key={item.path} 
+              to={item.path} 
+              className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <item.icon size={20} />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+          
+          <div className="nav-section">Account</div>
+          <Link to="/profile" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
+            <User size={20} />
+            <span>Profile Settings</span>
+          </Link>
+          <button onClick={handleLogout} className="nav-item logout-btn">
+            <LogOut size={20} />
+            <span>Sign Out</span>
+          </button>
+        </nav>
       </aside>
 
-      <div className="dashboard-main">
-        <header className="dashboard-topbar glass">
+      {/* Main Content */}
+      <main className="dashboard-main">
+        {/* Topbar */}
+        <header className="dashboard-topbar">
           <div className="topbar-left">
-            <button className="sidebar-toggle" onClick={toggleSidebar}><Menu size={22} /></button>
-            <h2 className="dashboard-title">{title}</h2>
+            <button className="mobile-toggle" onClick={() => setSidebarOpen(true)}>
+              <Menu size={24} />
+            </button>
+            <h2 className="page-title">{title}</h2>
           </div>
-          
+
           <div className="topbar-right">
-            <div style={{ position: 'relative' }}>
-              <button className="icon-btn" onClick={markRead}>
-                <Bell size={18} />
-                {unreadCount > 0 && <span className="badge-dot" />}
+            {/* Notifications */}
+            <div className="notifications-container">
+              <button className="topbar-btn" onClick={markRead}>
+                <Bell size={20} />
+                {notifications.some(n => !n.isRead) && <span className="notif-badge"></span>}
               </button>
               
               {notifOpen && (
-                <div className="notification-dropdown glass">
-                  <div className="dropdown-header">Notifications</div>
-                  <div className="dropdown-body">
-                    {notifications.length === 0 ? <p className="empty-notif">No notifications</p> :
+                <div className="notif-dropdown glass animate-slide-up">
+                  <div className="notif-header">Notifications</div>
+                  <div className="notif-list">
+                    {notifications.length > 0 ? (
                       notifications.map(n => (
-                        <div key={n._id} className={`notif-item ${n.isRead ? 'read' : 'unread'}`}>
-                          <p>{n.message}</p>
-                          <small>{new Date(n.createdAt).toLocaleTimeString()}</small>
+                        <div key={n._id} className={`notif-item ${!n.isRead ? 'unread' : ''}`}>
+                          <div className="notif-icon"><Bell size={14} /></div>
+                          <div className="notif-content">
+                            <p>{n.message}</p>
+                            <span>{new Date(n.createdAt).toLocaleTimeString()}</span>
+                          </div>
                         </div>
                       ))
-                    }
+                    ) : (
+                      <div className="notif-empty">No new notifications</div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
-            <Link to="/profile" className="user-profile-link">
-              <div className="user-profile">
-                <div className="user-avatar">{userData.username?.charAt(0).toUpperCase()}</div>
-                <div className="user-info">
-                  <span className="user-name">{userData.username}</span>
-                  <span className="user-role">{role}</span>
-                </div>
+
+            <div className="user-profile-badge" onClick={() => navigate('/profile')}>
+              <div className="avatar">{userData.username?.[0]?.toUpperCase() || 'U'}</div>
+              <div className="user-info">
+                <span className="username">{userData.username}</span>
+                <span className="user-role">{role}</span>
               </div>
-            </Link>
+            </div>
           </div>
         </header>
 
-        <main className="dashboard-content">
+        {/* Content Area */}
+        <div className="dashboard-content">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };

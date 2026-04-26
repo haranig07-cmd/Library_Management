@@ -1,3 +1,7 @@
+import React, { useState, useEffect } from 'react';
+import DashboardLayout from '../components/DashboardLayout';
+import BookCard from '../components/BookCard';
+import DataTable from '../components/DataTable';
 import { API_BASE_URL } from '../api';
 
 const StudentDashboard = () => {
@@ -48,73 +52,43 @@ const StudentDashboard = () => {
         },
         body: JSON.stringify({ bookId: book._id })
       });
-      
-      if (res.ok) {
-        alert(`Request submitted for "${book.title}". Please wait for librarian approval.`);
+      const data = await res.json();
+      if (data.success) {
+        alert("Request sent to librarian successfully!");
         fetchData();
       } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to request book');
+        alert(data.error || "Failed to send request");
       }
     } catch (err) {
       console.error(err);
-      alert('Error connecting to server');
+      alert("Error sending request");
     }
   };
 
-  const myBorrowedColumns = [
+  const columns = [
     { header: 'Book Title', cell: (row) => row.book?.title || 'Unknown' },
+    { header: 'Author', cell: (row) => row.book?.author || 'Unknown' },
     { header: 'Issue Date', cell: (row) => new Date(row.issueDate).toLocaleDateString() },
-    { 
-      header: 'Due Date', 
-      cell: (row) => {
-        const isOverdue = row.status === 'Issued' && new Date(row.dueDate) < new Date();
-        return (
-          <span style={{ color: isOverdue ? '#dc2626' : 'inherit', fontWeight: isOverdue ? 'bold' : 'normal' }}>
-            {new Date(row.dueDate).toLocaleDateString()} {isOverdue && '(Overdue)'}
-          </span>
-        );
-      }
-    },
-    { 
-      header: 'Status', 
-      cell: (row) => (
-        <span className={`badge ${row.status === 'Returned' ? 'badge-success' : 'badge-warning'}`}>
-          {row.status}
-        </span>
-      )
-    },
-    { header: 'Fine Paid', cell: (row) => row.fineAmount > 0 ? `$${row.fineAmount}` : '-' }
+    { header: 'Due Date', cell: (row) => new Date(row.dueDate).toLocaleDateString() },
+    { header: 'Status', cell: (row) => <span className={`badge ${row.status === 'Issued' ? 'badge-warning' : row.status === 'Returned' ? 'badge-success' : 'badge-danger'}`}>{row.status}</span> },
   ];
 
-  const activeBorrowed = transactions.filter(t => t.status === 'Issued').length;
-  const outstandingFines = transactions.reduce((acc, t) => acc + (t.fineAmount || 0), 0);
-
   return (
-    <DashboardLayout role="Student" title="Student Portal">
+    <DashboardLayout role="Student" title="Student Resource Center">
       <div className="stat-cards-grid">
         <div className="stat-card">
           <span className="stat-card-title">Currently Borrowed</span>
-          <span className="stat-card-value">{activeBorrowed}</span>
+          <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
         </div>
         <div className="stat-card">
-          <span className="stat-card-title">Total Books Read</span>
-          <span className="stat-card-value">{transactions.filter(t => t.status === 'Returned').length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-card-title">Outstanding Fines</span>
-          <span className="stat-card-value" style={{ color: outstandingFines > 0 ? '#dc2626' : '#10b981' }}>${outstandingFines.toFixed(2)}</span>
+          <span className="stat-card-title">Pending Requests</span>
+          <span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span>
         </div>
       </div>
-      
-      <div className="dashboard-section" id="borrowed">
-        <h3>My Borrowed Books</h3>
-        <DataTable columns={myBorrowedColumns} data={transactions} loading={loading} emptyMessage="You haven't borrowed any books yet." />
-      </div>
-      
-      <div className="dashboard-section" id="search">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h3>Book Catalog</h3>
+
+      <div className="dashboard-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h3>Available Books</h3>
           <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
             <input 
               type="text" 
@@ -126,18 +100,22 @@ const StudentDashboard = () => {
             <button type="submit" className="btn btn-primary">Search</button>
           </form>
         </div>
-        
-        {loading ? (
-          <p>Loading catalog...</p>
-        ) : books.length === 0 ? (
-          <p>No books found.</p>
-        ) : (
-          <div className="books-grid">
-            {books.map(book => (
-              <BookCard key={book._id} book={book} onRequest={handleRequestIssue} />
-            ))}
-          </div>
-        )}
+        <div className="books-grid">
+          {books.map(book => (
+            <BookCard 
+              key={book._id} 
+              book={book} 
+              onAction={() => handleRequestIssue(book)}
+              actionLabel={transactions.some(t => t.book?._id === book._id && t.status === 'Pending Approval') ? "Requested" : "Request Issue"}
+              disabled={transactions.some(t => t.book?._id === book._id && t.status === 'Pending Approval') || book.availableCopies === 0}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="dashboard-section">
+        <h3>My Borrowing History</h3>
+        <DataTable columns={columns} data={transactions.filter(t => t.status !== 'Pending Approval')} loading={loading} />
       </div>
     </DashboardLayout>
   );
