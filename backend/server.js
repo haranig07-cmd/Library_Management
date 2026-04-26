@@ -23,8 +23,8 @@ app.use(express.json());
 app.use(cors({
   origin: [
     'http://localhost:5173', 
-    'https://library-management-snowy-chi.vercel.app',
-    'https://innovatex-edulib-smart-library.vercel.app'
+    'https://innovatex-edulib-smart-library.vercel.app',
+    'https://innovatex-edulib-smart-library-git-main-haranig07-cmds-projects.vercel.app'
   ],
   credentials: true
 }));
