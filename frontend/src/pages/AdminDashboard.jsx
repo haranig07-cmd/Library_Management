@@ -84,6 +84,32 @@ const AdminDashboard = () => {
     a.click();
   };
 
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE_URL}/users`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify(userForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Account created for ${userForm.username}!`);
+        setIsModalOpen(false);
+        setUserForm({ username: '', email: '', password: '', role: 'Student' });
+        fetchData();
+      } else {
+        alert("❌ Failed: " + (data.error || "Could not create account"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ Network error. Please try again.");
+    }
+  };
+
   const inventoryHealthData = [
     { name: 'Good', value: books.filter(b => b.status === 'Good').length || 10, color: '#10b981' },
     { name: 'Damaged', value: books.filter(b => b.status === 'Damaged').length || 2, color: '#f59e0b' },
@@ -231,18 +257,33 @@ const AdminDashboard = () => {
       </div>
 
       {/* Add User Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create System Account">
-        <form className="modal-form" onSubmit={(e) => { e.preventDefault(); fetchData(); setIsModalOpen(false); }}>
-          <div className="modal-form-group"><label>Email</label><input type="email" required /></div>
-          <div className="modal-form-group"><label>Role</label>
-            <select>
-              <option>Student</option>
-              <option>Faculty</option>
-              <option>Librarian</option>
-              <option>Admin</option>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Account">
+        <form className="modal-form" onSubmit={handleAddUser}>
+          <div className="modal-form-group">
+            <label>Username</label>
+            <input type="text" value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} required placeholder="e.g. jdoe2025" />
+          </div>
+          <div className="modal-form-group">
+            <label>Email Address</label>
+            <input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required placeholder="jdoe@university.edu" />
+          </div>
+          <div className="modal-form-group">
+            <label>Password</label>
+            <input type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} required placeholder="Min. 6 characters" />
+          </div>
+          <div className="modal-form-group">
+            <label>Role</label>
+            <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})}>
+              <option value="Student">Student</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Librarian">Librarian</option>
+              <option value="Admin">Admin</option>
             </select>
           </div>
-          <button type="submit" className="modal-btn modal-btn-submit">Register</button>
+          <div className="modal-actions">
+            <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button type="submit" className="modal-btn modal-btn-submit">Create Account</button>
+          </div>
         </form>
       </Modal>
     </DashboardLayout>
