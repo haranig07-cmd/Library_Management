@@ -55,8 +55,10 @@ const StudentDashboard = () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert("Request sent successfully!");
+        alert("📚 Request Sent! The librarian will review your request shortly.");
         fetchData();
+      } else {
+        alert("⚠️ " + (data.error || "Failed to send request"));
       }
     } catch (err) {
       console.error(err);
@@ -127,8 +129,8 @@ const StudentDashboard = () => {
               key={book._id} 
               book={book} 
               onAction={() => handleRequestIssue(book)}
-              actionLabel={transactions.some(t => t.book?._id === book._id && t.status === 'Pending Approval') ? "Request Sent" : "Request This Book"}
-              disabled={transactions.some(t => t.book?._id === book._id && t.status === 'Pending Approval') || book.availableCopies === 0}
+              actionLabel={transactions.some(t => (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && t.status === 'Pending Approval') ? "Request Sent" : "Request This Book"}
+              disabled={transactions.some(t => (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && t.status === 'Pending Approval') || book.availableCopies === 0}
             />
           ))}
         </div>

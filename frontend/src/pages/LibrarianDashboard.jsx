@@ -114,9 +114,13 @@ const LibrarianDashboard = () => {
         body: JSON.stringify(issueForm)
       });
       if (res.ok) {
+        alert("✅ Book Issued Successfully!");
         setIsIssueModalOpen(false);
         setIssueForm({ userId: '', bookId: '', dueDate: '' });
         fetchData();
+      } else {
+        const data = await res.json();
+        alert("❌ Error: " + (data.error || "Could not issue book"));
       }
     } catch (err) {
       console.error(err);
@@ -142,7 +146,13 @@ const LibrarianDashboard = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ status })
       });
-      fetchData();
+      if (res.ok) {
+        alert(`✅ Request ${status === 'Issued' ? 'Approved' : 'Rejected'}!`);
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert("❌ " + (data.error || "Update failed"));
+      }
     } catch (err) {
       console.error(err);
     }
