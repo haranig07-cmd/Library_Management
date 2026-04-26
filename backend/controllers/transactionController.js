@@ -111,14 +111,19 @@ exports.requestBook = async (req, res) => {
     const book = await Book.findById(bookId);
     if (!book) return res.status(404).json({ success: false, error: 'Book not found' });
     
-    // Role-based due date
+    // Calculate due date safely
+    const now = new Date();
     const days = req.user.role === 'Faculty' ? 30 : 14;
+    const dueDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    console.log(`Creating request for user ${req.user._id} and book ${bookId}`);
 
     const transaction = await Transaction.create({
       user: req.user._id,
       book: bookId,
       status: 'Pending Approval',
-      dueDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+      issueDate: now,
+      dueDate: dueDate
     });
 
     res.status(201).json({ success: true, data: transaction });
@@ -168,8 +173,13 @@ exports.updateRequestStatus = async (req, res) => {
       }
       book.availableCopies -= 1;
       await book.save();
+      
+      const targetUser = await User.findById(transaction.user);
+      const days = targetUser.role === 'Faculty' ? 30 : 14;
+      
       transaction.status = 'Issued';
       transaction.issueDate = Date.now();
+      transaction.dueDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
       
       await Notification.create({
         user: transaction.user,

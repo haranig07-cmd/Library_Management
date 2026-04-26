@@ -47,11 +47,8 @@ const FacultyDashboard = () => {
   };
 
   const handleAction = async (book) => {
-    const isAvailable = book.availableCopies > 0;
-    const endpoint = isAvailable ? '/transactions/request' : '/transactions/reserve';
-    
     try {
-      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/transactions/request`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -60,8 +57,11 @@ const FacultyDashboard = () => {
         body: JSON.stringify({ bookId: book._id })
       });
       if (res.ok) {
-        alert(isAvailable ? "📚 Issue request sent! (30-day loan period)" : "📝 Book is issued, but you're now on the Waitlist!");
+        alert("📚 Request Sent! The librarian will review it shortly (30-day Faculty period applied).");
         fetchData();
+      } else {
+        const data = await res.json();
+        alert("⚠️ " + (data.error || "Could not process request"));
       }
     } catch (err) {
       console.error(err);
