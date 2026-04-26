@@ -10,6 +10,21 @@ const StudentDashboard = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [counts, setCounts] = useState({ borrowed: 0, pending: 0, returned: 0 });
+
+  const animateCount = (target, key) => {
+    let current = 0;
+    const increment = Math.ceil(target / 20) || 1;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        setCounts(prev => ({ ...prev, [key]: target }));
+        clearInterval(timer);
+      } else {
+        setCounts(prev => ({ ...prev, [key]: current }));
+      }
+    }, 30);
+  };
 
   const fetchData = async (query = '') => {
     setLoading(true);
@@ -26,7 +41,16 @@ const StudentDashboard = () => {
       const transData = await transRes.json();
       
       if (booksData.success) setBooks(booksData.data);
-      if (transData.success) setTransactions(transData.data);
+      if (transData.success) {
+        setTransactions(transData.data);
+        const borrowedCount = transData.data.filter(t => t.status === 'Issued').length;
+        const pendingCount = transData.data.filter(t => t.status === 'Pending Approval').length;
+        const returnedCount = transData.data.filter(t => t.status === 'Returned').length;
+        
+        animateCount(borrowedCount, 'borrowed');
+        animateCount(pendingCount, 'pending');
+        animateCount(returnedCount, 'returned');
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -103,21 +127,21 @@ const StudentDashboard = () => {
           <div className="stat-icon-wrapper primary"><BookOpen size={20} /></div>
           <div className="stat-card-info">
             <span className="stat-card-title">Currently Borrowed</span>
-            <span className="stat-card-value">{transactions.filter(t => t.status === 'Issued').length}</span>
+            <span className="stat-card-value">{counts.borrowed}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon-wrapper secondary"><Clock size={20} /></div>
           <div className="stat-card-info">
             <span className="stat-card-title">Pending Requests</span>
-            <span className="stat-card-value">{transactions.filter(t => t.status === 'Pending Approval').length}</span>
+            <span className="stat-card-value">{counts.pending}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon-wrapper success"><CheckCircle size={20} /></div>
           <div className="stat-card-info">
             <span className="stat-card-title">Returned Books</span>
-            <span className="stat-card-value">{transactions.filter(t => t.status === 'Returned').length}</span>
+            <span className="stat-card-value">{counts.returned}</span>
           </div>
         </div>
       </div>
