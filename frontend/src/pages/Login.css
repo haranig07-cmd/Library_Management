@@ -1,12 +1,12 @@
 .login-page {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   position: relative;
   overflow: hidden;
   background: #0a0f1e;
-  padding: 1.5rem;
+  padding: 6rem 1.5rem 3rem; /* 6rem top = space below sticky navbar */
 }
 
 .login-background-glow {
