@@ -1,26 +1,22 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram, Linkedin, BookOpen, Mail, Phone, MapPin } from 'lucide-react';
+import { BookOpen, Mail, Phone, MapPin } from 'lucide-react';
 
 function Footer() {
   return (
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-col">
-          <div className="nav-brand" style={{ marginBottom: '1rem' }}>
-            <Link to="/" style={{ color: 'white' }}>
-              <BookOpen size={28} color="var(--accent-color)" style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-              <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>EduLib</span>
+          <div className="nav-brand" style={{ marginBottom: '1.5rem' }}>
+            <Link to="/" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ background: 'var(--primary)', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+                <BookOpen size={24} color="white" />
+              </div>
+              <span style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.03em' }}>EduLib</span>
             </Link>
           </div>
-          <p>
+          <p style={{ maxWidth: '350px' }}>
             A smart, digital library management system designed to streamline operations, manage inventory, and provide a seamless experience for students and faculty.
           </p>
-          <div className="social-links">
-            <a href="#"><Facebook size={20} /></a>
-            <a href="#"><Twitter size={20} /></a>
-            <a href="#"><Instagram size={20} /></a>
-            <a href="#"><Linkedin size={20} /></a>
-          </div>
         </div>
 
         <div className="footer-col">
@@ -37,16 +33,16 @@ function Footer() {
         <div className="footer-col">
           <h3>Contact Info</h3>
           <div className="footer-links">
-            <div style={{ display: 'flex', gap: '0.5rem', color: 'var(--text-muted)' }}>
-              <MapPin size={20} color="var(--accent-color)" />
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+              <MapPin size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: '4px' }} />
               <span>123 University Ave, Tech City, ST 12345</span>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-              <Phone size={20} color="var(--accent-color)" />
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <Phone size={20} color="var(--primary)" style={{ flexShrink: 0 }} />
               <span>+1 (555) 123-4567</span>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-              <Mail size={20} color="var(--accent-color)" />
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <Mail size={20} color="var(--primary)" style={{ flexShrink: 0 }} />
               <span>support@edulib.edu</span>
             </div>
           </div>
@@ -54,7 +50,7 @@ function Footer() {
       </div>
       
       <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} EduLib Digital Library System. All Rights Reserved.</p>
+        <p>© {new Date().getFullYear()} EduLib Digital Library System. All Rights Reserved.</p>
       </div>
     </footer>
   );
