@@ -21,7 +21,11 @@ app.use(express.json());
 
 // Enable CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://library-management-snowy-chi.vercel.app'],
+  origin: [
+    'http://localhost:5173', 
+    'https://library-management-snowy-chi.vercel.app',
+    'https://innovatex-edulib-smart-library.vercel.app'
+  ],
   credentials: true
 }));
 
