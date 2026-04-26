@@ -145,8 +145,14 @@ const StudentDashboard = () => {
               key={book._id} 
               book={book} 
               onAction={() => handleRequestIssue(book)}
-              actionLabel={transactions.some(t => (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && t.status === 'Pending Approval') ? "Request Sent" : "Request This Book"}
-              disabled={transactions.some(t => (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && t.status === 'Pending Approval') || book.availableCopies === 0}
+              actionLabel={transactions.some(t => 
+                (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && 
+                ['Pending Approval', 'Issued'].includes(t.status)
+              ) ? "Already Requested/Issued" : "Request This Book"}
+              disabled={transactions.some(t => 
+                (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && 
+                ['Pending Approval', 'Issued'].includes(t.status)
+              ) || book.availableCopies === 0}
             />
           ))}
         </div>

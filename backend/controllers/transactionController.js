@@ -115,7 +115,7 @@ exports.requestBook = async (req, res) => {
     const days = req.user.role === 'Faculty' ? 30 : 14;
 
     const transaction = await Transaction.create({
-      user: req.user.id,
+      user: req.user._id,
       book: bookId,
       status: 'Pending Approval',
       dueDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000)

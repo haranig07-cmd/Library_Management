@@ -163,7 +163,14 @@ const FacultyDashboard = () => {
               key={book._id} 
               book={book} 
               onAction={() => handleAction(book)}
-              actionLabel={book.availableCopies > 0 ? "Request (30 Days)" : "Join Waitlist"}
+              actionLabel={transactions.some(t => 
+                (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && 
+                ['Pending Approval', 'Issued'].includes(t.status)
+              ) ? "Already Requested/Issued" : (book.availableCopies > 0 ? "Request (30 Days)" : "Join Waitlist")}
+              disabled={transactions.some(t => 
+                (t.book?._id?.toString() === book._id?.toString() || t.book === book._id) && 
+                ['Pending Approval', 'Issued'].includes(t.status)
+              )}
             />
           ))}
         </div>
