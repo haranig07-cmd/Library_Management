@@ -38,13 +38,20 @@ app.use((req, res, next) => {
   res.status(404).json({ success: false, error: 'Route not found' });
 });
 
+// Health check for Render
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'Online', database: mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...' });
+});
+
 const PORT = process.env.PORT || 5000;
 
-// Connect to database
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(async () => {
+// Start server immediately
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// Connect to database in background
+mongoose.connect(process.env.MONGO_URI).then(async () => {
   console.log('MongoDB Connected');
   
   // Auto-seeder to prevent empty database
@@ -78,10 +85,6 @@ mongoose.connect(process.env.MONGO_URI, {
   } catch (err) {
     console.error('Auto-seed error:', err);
   }
-
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
 }).catch(err => {
   console.error('Database connection error:', err);
 });
