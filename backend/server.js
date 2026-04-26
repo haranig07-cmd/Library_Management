@@ -25,6 +25,11 @@ app.use(cors({
   credentials: true
 }));
 
+// Health check for Render
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'Online', database: mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...' });
+});
+
 // Mount routers
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
@@ -37,11 +42,6 @@ app.use('/api/system', systemRoutes);
 // Error handling for unmatched routes
 app.use((req, res, next) => {
   res.status(404).json({ success: false, error: 'Route not found' });
-});
-
-// Health check for Render
-app.get('/', (req, res) => {
-  res.status(200).json({ status: 'Online', database: mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...' });
 });
 
 const PORT = process.env.PORT || 5000;
