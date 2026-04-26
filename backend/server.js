@@ -1,4 +1,4 @@
-// Final Render Build Nudge - 2026-04-26
+console.log('🚀 SERVER STARTING UP...');
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
