@@ -289,13 +289,20 @@ const LibrarianDashboard = () => {
       {/* Add/Edit Book Modal */}
       <Modal isOpen={isBookModalOpen || isEditBookModalOpen} onClose={() => {setIsBookModalOpen(false); setIsEditBookModalOpen(false)}} title={isEditBookModalOpen ? "Edit Book" : "Add Book"}>
         <form className="modal-form" onSubmit={isEditBookModalOpen ? handleUpdateBook : handleAddBook}>
-          <div className="modal-form-group"><label>Title</label><input type="text" value={bookForm.title} onChange={e => setBookForm({...bookForm, title: e.target.value})} required /></div>
+          <div className="modal-form-group"><label>Book Title</label><input type="text" value={bookForm.title} onChange={e => setBookForm({...bookForm, title: e.target.value})} required /></div>
           <div className="modal-form-group"><label>Author</label><input type="text" value={bookForm.author} onChange={e => setBookForm({...bookForm, author: e.target.value})} required /></div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="modal-form-group"><label>ISBN Code</label><input type="text" value={bookForm.isbn} onChange={e => setBookForm({...bookForm, isbn: e.target.value})} required placeholder="e.g. 978-3-16..." /></div>
+            <div className="modal-form-group"><label>Subject/Category</label><input type="text" value={bookForm.subject} onChange={e => setBookForm({...bookForm, subject: e.target.value})} required placeholder="e.g. Science" /></div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="modal-form-group"><label>Shelf Location</label><input type="text" value={bookForm.shelfLocation} onChange={e => setBookForm({...bookForm, shelfLocation: e.target.value})} placeholder="e.g. A-12" /></div>
-            <div className="modal-form-group"><label>Category</label><input type="text" value={bookForm.category} onChange={e => setBookForm({...bookForm, category: e.target.value})} placeholder="e.g. Science" /></div>
+            <div className="modal-form-group"><label>Physical Edition</label><input type="text" value={bookForm.edition} onChange={e => setBookForm({...bookForm, edition: e.target.value})} placeholder="e.g. 1st Edition" /></div>
           </div>
-          <div className="modal-form-group"><label>Copies</label><input type="number" value={bookForm.totalCopies} onChange={e => setBookForm({...bookForm, totalCopies: e.target.value})} required /></div>
+
+          <div className="modal-form-group"><label>Total Inventory Copies</label><input type="number" value={bookForm.totalCopies} onChange={e => setBookForm({...bookForm, totalCopies: e.target.value})} required /></div>
           <div className="modal-actions">
             <button type="submit" className="modal-btn modal-btn-submit">{isEditBookModalOpen ? 'Save Changes' : 'Add Book'}</button>
           </div>
